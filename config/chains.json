@@ -1,0 +1,14 @@
+{
+    "chains": {
+        "testnets": {
+      "sepoliaTestnet": {
+        "chainId": 11155111,
+        "name": "Sepolia",
+        "currency": "ETH",
+        "explorerUrl": "https://sepolia.etherscan.io",
+        "rpcUrl": "https://rpc.sepolia.org",
+        "image": "https://moralis.io/wp-content/uploads/web3wiki/159-goerli/637aee14aa9d9f521437ec16_hYC2y965v3QD7fEoVvutzGbJzVGLSOk6RZPwEQWcA_E.jpeg"
+      }
+    }
+}
+}
