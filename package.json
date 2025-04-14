@@ -11,7 +11,9 @@
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.0"
+    "next": "15.3.0",
+    "@web3modal/ethers5": "^4.1.9",
+    "ethers": "^5.7.2"
   },
   "devDependencies": {
     "typescript": "^5",
