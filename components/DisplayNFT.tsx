@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 
-// Updated ABI with ownerOf function
+// Updated ABI with transferFrom function
 const abi = [
   "function balanceOf(address owner) view returns (uint256)",
   "function ownerOf(uint256 tokenId) view returns (address)",
-  "function tokenURI(uint256 tokenId) view returns (string)"
+  "function tokenURI(uint256 tokenId) view returns (string)",
+  "function transferFrom(address from, address to, uint256 tokenId)"
 ];
 
 const contractAddress = "0x3bcdfdeA2e6499cdA1a587488F93B461aD9742E0";
@@ -21,6 +22,10 @@ export default function DisplayNFT() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [account, setAccount] = useState<string | null>(null);
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [transferStatus, setTransferStatus] = useState("");
+  const [isTransferring, setIsTransferring] = useState(false);
 
   useEffect(() => {
     // Check if wallet is connected when component mounts
@@ -122,22 +127,66 @@ export default function DisplayNFT() {
       setNfts(foundNfts);
       
       if (foundNfts.length === 0 && balance.toString() !== "0") {
-        setError("Found NFTs in balance but couldn't retrieve details. Try a different approach.");
+        console.log("Found NFTs in balance but couldn't retrieve details. Try a different approach.");
       }
     } catch (err) {
       console.error("Error fetching NFTs:", err);
-      setError("Failed to load your NFTs. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSelectNFT = (nft: NFT) => {
+    setSelectedNFT(nft);
+    setTransferStatus("");
+  };
+
+  const handleTransfer = async () => {
+    if (!selectedNFT || !recipientAddress || !window.ethereum || !account) {
+      console.log("Please select an NFT and enter a valid recipient address");
+      return;
+    }
+
+    // Validate recipient address
+    if (!ethers.utils.isAddress(recipientAddress)) {
+      console.log("Invalid recipient address");
+      return;
+    }
+
+    try {
+      setIsTransferring(true);
+      setTransferStatus("Initiating transfer...");
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum as ethers.providers.ExternalProvider);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+
+      // Send the transaction
+      const tx = await contract.transferFrom(account, recipientAddress, selectedNFT.id);
+      setTransferStatus("Transaction sent! Waiting for confirmation...");
+
+      // Wait for the transaction to be mined
+      const receipt = await tx.wait();
+      console.log("Transfer transaction:", receipt);
+
+      setTransferStatus("Transfer successful!");
+      
+      // Refresh NFTs after transfer
+      setTimeout(() => {
+        fetchNFTs();
+        setSelectedNFT(null);
+        setRecipientAddress("");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Error transferring NFT:", err);
+      setTransferStatus("Transfer failed. Check console for details.");
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading your mascots...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 p-4">{error}</div>;
   }
 
   if (!account) {
@@ -150,19 +199,66 @@ export default function DisplayNFT() {
 
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {nfts.map((nft) => (
-          <div key={nft.id} className="border rounded-lg p-4 bg-gray-50">
-            <img
-              src={nft.image}
-              alt={nft.name}
-              className="w-full h-48 object-contain mb-2 rounded"
-            />
-            <h3 className="font-bold text-lg">{nft.name}</h3>
-            <p className="text-sm text-gray-600">Token ID: {nft.id}</p>
+          <div 
+            key={nft.id} 
+            className={`border rounded-lg p-4 bg-gray-50 cursor-pointer transition-all ${
+              selectedNFT?.id === nft.id ? 'ring-2 ring-blue-500' : 'hover:shadow-md'
+            }`}
+            onClick={() => handleSelectNFT(nft)}
+          >
+            <div className="aspect-square w-full relative mb-2">
+              <img
+                src={nft.image}
+                alt={nft.name}
+                className="absolute inset-0 w-full h-full object-contain rounded"
+              />
+            </div>
+            <h3 className="font-bold text-lg text-center">{nft.name}</h3>
+            <p className="text-sm text-gray-600 text-center">Token ID: {nft.id}</p>
           </div>
         ))}
       </div>
+
+      {selectedNFT && (
+        <div className="mt-6 p-4 border rounded-lg bg-white">
+          <h3 className="text-lg font-bold mb-4">Transfer NFT</h3>
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">Selected: {selectedNFT.name} (ID: {selectedNFT.id})</p>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Recipient Address
+            </label>
+            <input
+              type="text"
+              value={recipientAddress}
+              onChange={(e) => setRecipientAddress(e.target.value)}
+              placeholder="0x..."
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <button
+            onClick={handleTransfer}
+            disabled={isTransferring || !recipientAddress}
+            className={`px-4 py-2 rounded ${
+              isTransferring || !recipientAddress
+                ? 'bg-gray-300 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {isTransferring ? 'Transferring...' : 'Transfer NFT'}
+          </button>
+          {transferStatus && (
+            <p className={`mt-2 text-sm ${
+              transferStatus.includes('successful') ? 'text-green-500' : 'text-blue-500'
+            }`}>
+              {transferStatus}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

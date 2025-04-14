@@ -59,12 +59,11 @@ export default function MintNFT() {
 
       setStatus(`✅ Minted ${mascots[mascotId].name}`);
     } catch (err: any) {
+      console.error("Mint failed:", err);
       if (err.message?.includes("already minted")) {
-        setStatus("⚠️ You already minted this mascot type.");
-      } else {
-        setStatus("❌ Mint failed. See console.");
-        console.error(err);
+        console.log("You already minted this mascot type.");
       }
+      setStatus("❌ Mint failed. Check console for details.");
     }
   };
 
@@ -74,14 +73,16 @@ export default function MintNFT() {
         {mascots.map((m) => (
           <div
             key={m.id}
-            className="border rounded p-2 shadow hover:shadow-md transition cursor-pointer"
+            className="border rounded-lg p-4 shadow hover:shadow-md transition cursor-pointer bg-white/80 hover:bg-white hover:shadow-purple-500/25 hover:shadow-lg hover:scale-[1.02] duration-300 ease-out"
             onClick={() => mintMascot(m.id)}
           >
-            <img
-              src={m.image}
-              alt={m.name}
-              className="rounded mb-2 w-full h-auto"
-            />
+            <div className="aspect-square w-full relative mb-2">
+              <img
+                src={m.image}
+                alt={m.name}
+                className="rounded absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
             <div className="text-center font-medium">{m.name}</div>
           </div>
         ))}
