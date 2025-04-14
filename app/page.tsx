@@ -8,12 +8,17 @@ import DisplayNFT from "../components/DisplayNFT";
 
 export default function Home() {
   const [chainId, setChainId] = useState("");
+  const [shouldRefreshNFTs, setShouldRefreshNFTs] = useState(0);
 
   useEffect(() => {
     initializeWeb3Modal();
   }, []);
 
   useInitEthereum(setChainId);
+
+  const triggerNFTRefresh = () => {
+    setShouldRefreshNFTs(prev => prev + 1);
+  };
 
   return (
     <div className="min-h-screen relative">
@@ -46,12 +51,12 @@ export default function Home() {
         <div className="flex flex-1 gap-8">
           <div className="w-1/2 p-6 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl">
             <h2 className="text-xl font-bold mb-4">Mint a Mascot</h2>
-            <MintNFT />
+            <MintNFT onSuccessfulMint={triggerNFTRefresh} />
           </div>
 
           <div className="w-1/2 p-6 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl">
             <h2 className="text-xl font-bold mb-4">Your Mascots</h2>
-            <DisplayNFT />
+            <DisplayNFT refreshTrigger={shouldRefreshNFTs} />
           </div>
         </div>
       </div>

@@ -30,6 +30,10 @@ npm run dev
   - Sherlock Holmes
 - Click on a mascot to mint
 - Confirm the transaction in your wallet
+- Added Pre-mint Check:
+   -  Uses callStatic.mint() to simulate the transaction without actually sending it
+   - This checks if the transaction would revert without spending gas
+   If it detects "already minted", shows the warning without showing the modal
 
 [View Minting Code](components/MintNFT.tsx)
 
@@ -67,13 +71,6 @@ npm run dev
 ## Smart Contract Details
 
 The contract is deployed at: `0xD50D663727C49Be5E1632707E71aAd2f110903D1`
-
-Key features:
-- ERC721 standard implementation
-- On-chain metadata storage
-- Base64 encoded JSON responses
-- Ownership tracking per wallet address
-- Type-specific minting restrictions
 
 ## Development Notes
 

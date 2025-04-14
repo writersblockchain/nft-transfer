@@ -17,7 +17,11 @@ type NFT = {
   image: string;
 };
 
-export default function DisplayNFT() {
+interface DisplayNFTProps {
+  refreshTrigger: number;
+}
+
+export default function DisplayNFT({ refreshTrigger }: DisplayNFTProps) {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,10 +58,8 @@ export default function DisplayNFT() {
   useEffect(() => {
     if (account) {
       fetchNFTs();
-    } else {
-      setNfts([]);
     }
-  }, [account]);
+  }, [refreshTrigger, account]);
 
   const checkConnection = async () => {
     if (!window.ethereum) return;

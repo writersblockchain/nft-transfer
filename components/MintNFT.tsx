@@ -42,9 +42,15 @@ const mascots = [
   },
 ];
 
-export default function MintNFT() {
+interface MintNFTProps {
+  onSuccessfulMint: () => void;
+}
+
+export default function MintNFT({ onSuccessfulMint }: MintNFTProps) {
   const [status, setStatus] = useState("");
   const [account, setAccount] = useState<string | null>(null);
+  const [isMinting, setIsMinting] = useState(false);
+  const [mintingMascot, setMintingMascot] = useState<string | null>(null);
 
   useEffect(() => {
     checkWalletConnection();
@@ -93,33 +99,82 @@ export default function MintNFT() {
         return;
       }
 
-      setStatus("Minting...");
+      // Check if already minted before showing modal
       const provider = new ethers.providers.Web3Provider(window.ethereum as any);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, ERC721_ABI, signer);
 
+      try {
+        // Try to mint without sending transaction to check if it would revert
+        await contract.callStatic.mint(mascotId);
+      } catch (err: any) {
+        const errorMessage = err.message || err.error?.message || err.data?.message || '';
+        const revertMessage = err.error?.data?.message || err.data?.data?.message || '';
+        
+        if (errorMessage.includes("already minted") || revertMessage.includes("already minted")) {
+          setStatus(`⚠️ You can only mint one ${mascots[mascotId].name}!`);
+          return;
+        }
+      }
+
+      // If we get here, the mint should succeed
+      setIsMinting(true);
+      setMintingMascot(mascots[mascotId].name);
+      setStatus("Minting...");
+      
       const tx = await contract.mint(mascotId);
       await tx.wait();
 
       setStatus(`✅ Minted ${mascots[mascotId].name}`);
+      onSuccessfulMint();
     } catch (err: any) {
       console.error("Mint failed:", err);
-      // Check for the specific error message in different possible locations
       const errorMessage = err.message || err.error?.message || err.data?.message || '';
       const revertMessage = err.error?.data?.message || err.data?.data?.message || '';
       
       if (errorMessage.includes("already minted") || revertMessage.includes("already minted")) {
         setStatus(`⚠️ You can only mint one ${mascots[mascotId].name}!`);
-      } else if (errorMessage.includes("unknown account") || errorMessage.includes("getAddress")) {
-        setStatus(`⚠️ Please connect your wallet to mint ${mascots[mascotId].name}`);
       } else {
         setStatus("❌ Mint failed. Check console for details.");
       }
+    } finally {
+      setTimeout(() => {
+        setIsMinting(false);
+        setMintingMascot(null);
+      }, 2000);
     }
   };
 
   return (
-    <div>
+    <div className="relative">
+      {/* Minting Popup Overlay */}
+      {isMinting && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full mx-4 text-center">
+            <div className="flex flex-col items-center">
+              <img 
+                src="/you_got_this.svg" 
+                alt="Vlayer Logo" 
+                className="w-16 h-16 mb-4 animate-pulse"
+              />
+              <h3 className="text-xl font-bold mb-2">
+                {status === "Minting..." ? "Minting your Mascot!" : status}
+              </h3>
+              {mintingMascot && (
+                <p className="text-gray-600">
+                  {mintingMascot}
+                </p>
+              )}
+              <div className="mt-4 h-1 w-full bg-gray-200 rounded">
+                <div className="h-1 bg-purple-500 rounded animate-[width] duration-1000" 
+                     style={{width: status.includes("✅") ? "100%" : "60%"}}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!account && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-yellow-700">
