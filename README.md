@@ -33,7 +33,7 @@ npm run dev
 - Added Pre-mint Check:
    -  Uses callStatic.mint() to simulate the transaction without actually sending it
    - This checks if the transaction would revert without spending gas
-   If it detects "already minted", shows the warning without showing the modal
+   - If it detects "already minted", shows the warning without showing the modal
 
 [View Minting Code](components/MintNFT.tsx)
 
