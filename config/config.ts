@@ -1,7 +1,7 @@
 // Project ID
 export const projectId = "9f68d526720f359ea9cd5fa13c3c5b08"
 
-export const CONTRACT_ADDRESS = "0x3bcdfdeA2e6499cdA1a587488F93B461aD9742E0";
+export const CONTRACT_ADDRESS = "0xD50D663727C49Be5E1632707E71aAd2f110903D1";
 
 // 4. Metadata Object
 export const metadata = {

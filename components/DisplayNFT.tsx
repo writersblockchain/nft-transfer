@@ -9,7 +9,7 @@ const abi = [
   "function transferFrom(address from, address to, uint256 tokenId)"
 ];
 
-const contractAddress = "0x3bcdfdeA2e6499cdA1a587488F93B461aD9742E0";
+const contractAddress = "0xD50D663727C49Be5E1632707E71aAd2f110903D1";
 
 type NFT = {
   id: number;

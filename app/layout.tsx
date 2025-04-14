@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vlayer | Mascot Minter",
   description: "Generated seanrad.eth",
+  icons: {
+    icon: "/vlayer.svg",
+  },
 };
 
 export default function RootLayout({

@@ -77,16 +77,9 @@ contract VlayerMascots is ERC721, Ownable {
         ownerOf(tokenId); // will revert if nonexistent
 
         uint256 mascotType = uint256(tokenMascotType[tokenId]);
-        uint256 mascotNumber = mascotTypeCounts[mascotType];
-
-        string memory name = string(abi.encodePacked(
-            mascotNames[mascotType],
-            " #",
-            mascotNumber.toString()
-        ));
 
         string memory json = Base64.encode(bytes(string(abi.encodePacked(
-            '{"name": "', name, '", ',
+            '{"name": "', mascotNames[mascotType], '", ',
             '"description": "Vlayer Mascots Collection", ',
             '"image": "', mascotImageURLs[mascotType], '", ',
             '"attributes": [{"trait_type": "Mascot Type", "value": ', mascotType.toString(), '}]}'

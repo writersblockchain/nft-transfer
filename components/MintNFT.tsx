@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESS } from "../config/config";
 
@@ -44,12 +44,56 @@ const mascots = [
 
 export default function MintNFT() {
   const [status, setStatus] = useState("");
+  const [account, setAccount] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkWalletConnection();
+    
+    if (window.ethereum) {
+      (window.ethereum as any).on('accountsChanged', handleAccountsChanged);
+    }
+
+    return () => {
+      if (window.ethereum) {
+        (window.ethereum as any).removeListener('accountsChanged', handleAccountsChanged);
+      }
+    };
+  }, []);
+
+  const handleAccountsChanged = (accounts: string[]) => {
+    if (accounts.length > 0) {
+      setAccount(accounts[0]);
+    } else {
+      setAccount(null);
+    }
+  };
+
+  const checkWalletConnection = async () => {
+    if (!window.ethereum) return;
+
+    try {
+      const accounts = await (window.ethereum as any).request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+      }
+    } catch (err) {
+      console.error("Error checking wallet connection:", err);
+    }
+  };
 
   const mintMascot = async (mascotId: number) => {
     try {
-      setStatus("Minting...");
-      if (!window.ethereum) throw new Error("Wallet not found");
+      if (!window.ethereum) {
+        setStatus(`⚠️ Please install MetaMask to mint ${mascots[mascotId].name}`);
+        return;
+      }
 
+      if (!account) {
+        setStatus(`⚠️ Please connect your wallet to mint ${mascots[mascotId].name}`);
+        return;
+      }
+
+      setStatus("Minting...");
       const provider = new ethers.providers.Web3Provider(window.ethereum as any);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, ERC721_ABI, signer);
@@ -60,20 +104,34 @@ export default function MintNFT() {
       setStatus(`✅ Minted ${mascots[mascotId].name}`);
     } catch (err: any) {
       console.error("Mint failed:", err);
-      if (err.message?.includes("already minted")) {
-        console.log("You already minted this mascot type.");
+      // Check for the specific error message in different possible locations
+      const errorMessage = err.message || err.error?.message || err.data?.message || '';
+      const revertMessage = err.error?.data?.message || err.data?.data?.message || '';
+      
+      if (errorMessage.includes("already minted") || revertMessage.includes("already minted")) {
+        setStatus(`⚠️ You can only mint one ${mascots[mascotId].name}!`);
+      } else if (errorMessage.includes("unknown account") || errorMessage.includes("getAddress")) {
+        setStatus(`⚠️ Please connect your wallet to mint ${mascots[mascotId].name}`);
+      } else {
+        setStatus("❌ Mint failed. Check console for details.");
       }
-      setStatus("❌ Mint failed. Check console for details.");
     }
   };
 
   return (
     <div>
+      {!account && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-700">
+            👋 Connect your wallet using the button in the top right to start minting mascots!
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-6">
         {mascots.map((m) => (
           <div
             key={m.id}
-            className="border rounded-lg p-4 shadow hover:shadow-md transition cursor-pointer bg-white/80 hover:bg-white hover:shadow-purple-500/25 hover:shadow-lg hover:scale-[1.02] duration-300 ease-out"
+            className="border rounded-lg p-4 shadow hover:shadow-md transition cursor-pointer bg-white/80 hover:bg-white hover:shadow-purple-500/25 hover:shadow-lg hover:scale-[1.02] duration-300 ease-out relative group"
             onClick={() => mintMascot(m.id)}
           >
             <div className="aspect-square w-full relative mb-2">
@@ -84,10 +142,24 @@ export default function MintNFT() {
               />
             </div>
             <div className="text-center font-medium">{m.name}</div>
+            {status.includes(m.name) && (
+              <div 
+                className={`absolute inset-0 flex items-center justify-center rounded-lg ${
+                  status.includes("⚠️") 
+                    ? "bg-yellow-500/90" 
+                    : status.includes("✅") 
+                    ? "bg-green-500/90"
+                    : "bg-red-500/90"
+                } transition-opacity duration-300 opacity-0 group-hover:opacity-100`}
+              >
+                <p className="text-white text-center font-medium px-4">
+                  {status.includes(m.name) ? status : ""}
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>
-      {status && <p className="mt-4 text-sm text-gray-700">{status}</p>}
     </div>
   );
 }
